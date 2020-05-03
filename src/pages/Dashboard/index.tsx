@@ -18,9 +18,23 @@ interface Repository {
 }
 
 const Dashboard: React.FC = () => {
-  const [repositories, setRepositories] = useState<Repository[]>([]);
   const [inputError, setInputError] = useState('');
   const [newRepo, setNewRepo] = useState('');
+  const [repositories, setRepositories] = useState<Repository[]>(() => {
+    const storagedRepos = localStorage.getItem('@GitHubExplorer:repositories');
+
+    if (storagedRepos) {
+      return JSON.parse(storagedRepos);
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      '@GitHubExplorer:repositories',
+      JSON.stringify(repositories),
+    );
+  }, [repositories]);
 
   async function handleAddRepository(
     event: FormEvent<HTMLFormElement>,
