@@ -1,17 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouteMatch, Link } from 'react-router-dom';
 
-// Styles
+// Syles
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { Header, RepoInfo, Issues } from './styles';
 import geLogo from '../../assets/logo.svg';
+// Services
+import api from '../../services/api';
 
 interface RepositoryParams {
   repository: string;
 }
 
+interface Repository {
+  full_name: string;
+  description: string;
+  stargazers_count: number;
+  forks_count: number;
+  open_issues_count: number;
+  owner: {
+    login: string;
+    avatar_url: string;
+  };
+}
+
+interface Issue {
+  id: number;
+  title: string;
+  html_url: string;
+  user: {
+    login: string;
+  };
+}
+
 const Repositories: React.FC = () => {
+  const [repository, setRepository] = useState<Repository | null>(null);
+  const [issues, setIssues] = useState<Issue[]>([]);
+
   const { params } = useRouteMatch<RepositoryParams>();
+
+  useEffect(() => {
+    api.get(`/repos/${params.repository}`).then((response) => {
+      setRepository(response.data);
+    });
+
+    api.get(`/repos/${params.repository}/issues`).then((response) => {
+      setIssues(response.data);
+    });
+  }, [params.repository]);
 
   return (
     <>
@@ -23,41 +59,45 @@ const Repositories: React.FC = () => {
         </Link>
       </Header>
 
-      <RepoInfo>
-        <header>
-          <img
-            src="https://avatars0.githubusercontent.com/u/22108833?v=4"
-            alt="Avatar"
-          />
-          <div>
-            <strong>Repo title</strong>
-            <p>Repo desc</p>
-          </div>
-        </header>
-        <ul>
-          <li>
-            <strong>Number</strong>
-            <span>Starts</span>
-          </li>
-          <li>
-            <strong>Number</strong>
-            <span>Forks</span>
-          </li>
-          <li>
-            <strong>Number</strong>
-            <span>Issues abertas</span>
-          </li>
-        </ul>
-      </RepoInfo>
+      {repository && (
+        <RepoInfo>
+          <header>
+            <img
+              src={repository.owner.avatar_url}
+              alt={repository.owner.login}
+            />
+            <div>
+              <strong>{repository.full_name}</strong>
+              <p>{repository.description}</p>
+            </div>
+          </header>
+          <ul>
+            <li>
+              <strong>{repository.stargazers_count}</strong>
+              <span>Starts</span>
+            </li>
+            <li>
+              <strong>{repository.forks_count}</strong>
+              <span>Forks</span>
+            </li>
+            <li>
+              <strong>{repository.open_issues_count}</strong>
+              <span>Issues abertas</span>
+            </li>
+          </ul>
+        </RepoInfo>
+      )}
 
       <Issues>
-        <Link to="xablau">
-          <div>
-            <strong>Issue title</strong>
-            <p>Issue desc</p>
-          </div>
-          <FiChevronRight size={25} />
-        </Link>
+        {issues.map((issue) => (
+          <a key={issue.id} href={issue.html_url}>
+            <div>
+              <strong>{issue.title}</strong>
+              <p>{issue.user.login}</p>
+            </div>
+            <FiChevronRight size={25} />
+          </a>
+        ))}
       </Issues>
     </>
   );
